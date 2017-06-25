@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>URL Shortener Microservice</title>
+    <!--suppress HtmlUnknownTarget -->
+    <link rel='stylesheet' href='/stylesheets/style.css'/>
+</head>
+<body>
+<h1>FreeCodeCamp - Backend - API Projects - URL Shortener Microservice</h1>
+<h2>API:</h2>
+<h2>URL Shortening:</h2>
+<h3><%= serverHostNameWithProtocol %>/shorten/:URL(in http://www.example.com format)</h3>
+<h2>Example usage:</h2>
+<h3><%= serverHostNameWithProtocol %>/shorten/http://www.example.com</h3>
+<h3><%= serverHostNameWithProtocol %>/shorten/<%= serverHostNameWithProtocol %></h3>
+<h2>Example output:</h2>
+<h3>{ "shortened_from": "http://www.some_very_very_very_very_very_very_very_very_very_long_url.com" ,"shortened_to":
+    "<%= serverHostNameWithProtocol %>/someUrl" }</h3>
+
+<br>
+<h2>Retrieving Shortened URL:</h2>
+<h3><%= serverHostNameWithProtocol %>/:shortURL</h3>
+<h2>Example usage:</h2>
+<h3><%= serverHostNameWithProtocol %>/someUrl</h3>
+<h2>Example output:</h2>
+<h3>{ "original_url": "http://www.some_very_very_very_very_very_very_very_very_very_long_url.com"}</h3>
+
+</body>
+</html>
