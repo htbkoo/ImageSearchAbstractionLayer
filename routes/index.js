@@ -1,7 +1,7 @@
 var express = require('express');
 var router = express.Router();
 
-var urlShortenerMicroservice = require("../service/urlShortenerMicroservice");
+var imageSearchService = require("../service/imageSearchService");
 var serverHostNameFormatter = require("../service/serverHostNameFormatter");
 
 /* GET home page. */
@@ -15,24 +15,22 @@ router.get('/', function (req, res) {
     });
 });
 
-router.get('/shorten/*', function (req, res) {
-    var url = req.params['0'];
-    urlShortenerMicroservice.tryShortening(url, getFullHostNameFromReq(req)).then(function (jsonResponse) {
-            res.send(jsonResponse);
-        }
-    );
-});
-
-router.get(/\/(.+)/, function (req, res) {
-    var urlParam = req.params['0'];
-    urlShortenerMicroservice.searchForOriginalUrl(urlParam, getFullHostNameFromReq(req)).then(function (jsonResponse) {
-            if ('shorten_from' in jsonResponse) {
-                res.redirect(jsonResponse['shorten_from']);
-            } else {
+router.get('/search/*', function (req, res) {
+    var query = req.params['0'];
+    imageSearchService.searchAndPersist(query)
+        .then(function (jsonResponse) {
                 res.send(jsonResponse);
             }
-        }
-    );
+        );
+});
+
+router.get('/latest', function (req, res) {
+    var urlParam = req.params['0'];
+    imageSearchService.latest()
+        .then(function (jsonResponse) {
+                res.send(jsonResponse);
+            }
+        );
 });
 
 module.exports = router;
