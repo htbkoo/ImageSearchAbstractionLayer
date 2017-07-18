@@ -17,6 +17,8 @@
     "express": "~4.13.1",
     "mongodb": "^2.2.28",
     "morgan": "~1.6.1",
+    "request": "^2.81.0",
+    "request-promise-native": "^1.0.4",
     "serve-favicon": "~2.3.0",
     "uuid": "^3.0.1",
     "valid-url": "^1.0.9"
