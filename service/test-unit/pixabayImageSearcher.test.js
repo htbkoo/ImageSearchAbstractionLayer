@@ -1,7 +1,7 @@
 /**
  * Created by Hey on 17 Jul 2017
  */
-require('dotenv');
+require('dotenv').config();
 var test = require('chai');
 var sinon = require('../test-util/sinonTestHelper').sinon;
 
