@@ -10,19 +10,16 @@ var pixabayImageSearcher = require('../pixabayImageSearcher');
 describe("imageSearchService", function () {
     it("should return search results in searchAndPersist", sinon.test(function () {
         //    given
-        var someResults = {
-            "keyA": "valueA",
-            "keyB": "valueB"
-        };
+        var aResponseFromPixabay = require('./resources/aResponseFromPixabay.json');
         var stub_pixabayImageSearcher = this.stub(pixabayImageSearcher, 'search');
-        stub_pixabayImageSearcher.withArgs("someQuery").returns(Promise.resolve(someResults));
+        stub_pixabayImageSearcher.withArgs("someQuery").returns(Promise.resolve(aResponseFromPixabay));
 
         //    when
         var promise = imageSearchService.searchAndPersist("someQuery");
 
         //    then
         return promise.then(function (actualResults) {
-            test.expect(actualResults).to.deep.equal(someResults);
+            test.expect(actualResults).to.deep.equal(aResponseFromPixabay);
         }).catch(function (err) {
             throw err;
         });
