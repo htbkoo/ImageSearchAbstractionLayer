@@ -21,7 +21,11 @@ router.get('/search/*', function (req, res) {
         .then(function (jsonResponse) {
                 res.send(jsonResponse);
             }
-        );
+        )
+        .catch(function (err) {
+            console.log(err);
+            throw err;
+        });
 });
 
 router.get('/latest', function (req, res) {
