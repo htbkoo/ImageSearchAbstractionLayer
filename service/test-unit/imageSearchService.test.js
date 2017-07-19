@@ -8,20 +8,39 @@ var imageSearchService = require('../imageSearchService');
 var pixabayImageSearcher = require('../pixabayImageSearcher');
 
 describe("imageSearchService", function () {
-    it("should return search results in searchAndPersist", sinon.test(function () {
+    it("should return search results in searchAndPersist(:query)", sinon.test(function () {
         //    given
         var aResponseFromPixabay = require('./resources/aResponseFromPixabay.json');
         var stub_pixabayImageSearcher = this.stub(pixabayImageSearcher, 'search');
-        stub_pixabayImageSearcher.withArgs("someQuery").returns(Promise.resolve(aResponseFromPixabay));
+        var someQuery = "someQuery";
+        stub_pixabayImageSearcher.withArgs(someQuery).returns(Promise.resolve(aResponseFromPixabay));
 
         //    when
-        var promise = imageSearchService.searchAndPersist("someQuery");
+        var promise = imageSearchService.searchAndPersist(someQuery);
 
         //    then
+        return getPromiseThatAssertResultsAndThrowOnError(promise, aResponseFromPixabay);
+    }));
+
+    it("should return search results with offset in searchAndPersist(:query, :offset)", sinon.test(function () {
+        //    given
+        var anotherResponseFromPixabay = require('./resources/anotherResponseFromPixabay.json');
+        var stub_pixabayImageSearcher = this.stub(pixabayImageSearcher, 'search');
+        var someQuery = "someQuery", someOffset = 2;
+        stub_pixabayImageSearcher.withArgs(someQuery, someOffset).returns(Promise.resolve(anotherResponseFromPixabay));
+
+        //    when
+        var promise = imageSearchService.searchAndPersist(someQuery, someOffset);
+
+        //    then
+        return getPromiseThatAssertResultsAndThrowOnError(promise, anotherResponseFromPixabay);
+    }));
+
+    function getPromiseThatAssertResultsAndThrowOnError(promise, anotherResponseFromPixabay) {
         return promise.then(function (actualResults) {
-            test.expect(actualResults).to.deep.equal(aResponseFromPixabay);
+            test.expect(actualResults).to.deep.equal(anotherResponseFromPixabay);
         }).catch(function (err) {
             throw err;
         });
-    }));
+    }
 });

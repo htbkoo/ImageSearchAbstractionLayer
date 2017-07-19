@@ -17,7 +17,8 @@ router.get('/', function (req, res) {
 
 router.get('/search/*', function (req, res) {
     var query = req.params['0'];
-    imageSearchService.searchAndPersist(query)
+    var offset = req.query.offset;
+    imageSearchService.searchAndPersist(query, offset)
         .then(function (jsonResponse) {
                 res.send(jsonResponse);
             }
