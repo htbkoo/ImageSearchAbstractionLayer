@@ -4,9 +4,18 @@
 
 var mongo = require('mongodb').MongoClient;
 var mongoUrl = process.env.MONGO_URL;
+var mongoDbConnection;
+
+function isConnected(){
+    return typeof mongoDbConnection !== "undefined";
+}
 
 module.exports = {
-    "getMongoDbConnection": function () {
-        return mongo.connect(mongoUrl);
+    "getOrReuseMongoDbConnection": function () {
+        if (!isConnected()) {
+            mongoDbConnection = mongo.connect(mongoUrl);
+        }
+        return mongoDbConnection;
+
     }
 };

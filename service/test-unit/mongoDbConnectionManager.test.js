@@ -21,7 +21,7 @@ describe("mongoDbConnectionManager", function () {
         });
     });
 
-    describe("getMongoDbConnection", function () {
+    describe("getOrReuseMongoDbConnection", function () {
         var mongoUrl = process.env.MONGO_URL;
         var mongoDbConnectionManager = rewire('../mongoDbConnectionManager');
         var mockMongo;
@@ -39,10 +39,28 @@ describe("mongoDbConnectionManager", function () {
             mockMongo.expects("connect").withArgs(mongoUrl).once().returns(theConnection);
 
             //    when
-            var connection = mongoDbConnectionManager.getMongoDbConnection();
+            var connection = mongoDbConnectionManager.getOrReuseMongoDbConnection();
 
             //    then
             mockMongo.verify();
+            test.expect(connection).to.equal(theConnection);
+        });
+
+        it("should be reuse mongoDb connection instead of recalling mongo.connect", function () {
+            //    given
+            var theConnection = "this is the connection";
+            var originalMongo = mongoDbConnectionManager.__get__('mongo');
+            test.expect(typeof originalMongo).to.not.equal('undefined');
+            mockMongo = sinon.stub(originalMongo, "connect");
+            mockMongo.withArgs(mongoUrl).onFirstCall().returns(theConnection);
+            mockMongo.throws(new Error("Should not call mongo.connect() more than once"));
+
+            //    when
+            var connection = mongoDbConnectionManager.getOrReuseMongoDbConnection();
+            test.expect(connection).to.equal(theConnection);
+            connection = mongoDbConnectionManager.getOrReuseMongoDbConnection();
+
+            //    then
             test.expect(connection).to.equal(theConnection);
         });
     });
