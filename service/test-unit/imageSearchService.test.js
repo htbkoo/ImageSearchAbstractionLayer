@@ -12,13 +12,9 @@ describe("imageSearchService", function () {
     describe("search", function () {
         it("should return search results in searchAndPersist(:query)", sinon.test(function () {
             //    given
-            var aResponseFromPixabay = require('./resources/aResponseFromPixabay.json');
-            var expectedResult = require('./resources/expectedResultFor_aResponseFromPixabay.json');
-            var stub_pixabayImageSearcher = this.stub(pixabayImageSearcher, 'search');
             var someQuery = "someQuery";
-            stub_pixabayImageSearcher.withArgs(someQuery).returns(Promise.resolve(aResponseFromPixabay));
-            var stub_queryPersister = this.stub(queryPersister, 'persist');
-            stub_queryPersister.withArgs(someQuery, aResponseFromPixabay).returns(aResponseFromPixabay);
+            var expectedResult = require('./resources/expectedResultFor_aResponseFromPixabay.json');
+            stubResponses.call(this, someQuery, 'aResponseFromPixabay.json');
 
             //    when
             var promise = imageSearchService.searchAndPersist(someQuery);
@@ -29,13 +25,9 @@ describe("imageSearchService", function () {
 
         it("should return search results with offset in searchAndPersist(:query, :offset)", sinon.test(function () {
             //    given
-            var anotherResponseFromPixabay = require('./resources/anotherResponseFromPixabay.json');
-            var expectedResult = require('./resources/expectedResultFor_anotherResponseFromPixabay.json');
-            var stub_pixabayImageSearcher = this.stub(pixabayImageSearcher, 'search');
             var someQuery = "someQuery", someOffset = 2;
-            stub_pixabayImageSearcher.withArgs(someQuery, someOffset).returns(Promise.resolve(anotherResponseFromPixabay));
-            var stub_queryPersister = this.stub(queryPersister, 'persist');
-            stub_queryPersister.withArgs(someQuery, anotherResponseFromPixabay).returns(anotherResponseFromPixabay);
+            var expectedResult = require('./resources/expectedResultFor_anotherResponseFromPixabay.json');
+            stubResponses.call(this, someQuery, 'anotherResponseFromPixabay.json');
 
             //    when
             var promise = imageSearchService.searchAndPersist(someQuery, someOffset);
@@ -48,14 +40,9 @@ describe("imageSearchService", function () {
     describe("persist", function () {
         it("should persist search query in searchAndPersist(:query)", sinon.test(function () {
             //    given
-            var aResponseFromPixabay = require('./resources/aResponseFromPixabay.json');
-            var expectedResult = require('./resources/expectedResultFor_aResponseFromPixabay.json');
-            var stub_pixabayImageSearcher = this.stub(pixabayImageSearcher, 'search');
             var someQuery = "someQuery";
-            var mockResultFromSearcher = "This should not be the final return value";
-            stub_pixabayImageSearcher.withArgs(someQuery).returns(Promise.resolve(mockResultFromSearcher));
-            var stub_queryPersister = this.stub(queryPersister, 'persist');
-            stub_queryPersister.withArgs(someQuery, mockResultFromSearcher).returns(aResponseFromPixabay);
+            var expectedResult = require('./resources/expectedResultFor_aResponseFromPixabay.json');
+            stubResponses.call(this, someQuery, 'aResponseFromPixabay.json');
 
             //    when
             var promise = imageSearchService.searchAndPersist(someQuery);
@@ -71,5 +58,13 @@ describe("imageSearchService", function () {
         }).catch(function (err) {
             throw err;
         });
+    }
+
+    function stubResponses(query, responseJsonFileName) {
+        var aResponseFromPixabay = require('./resources/' + responseJsonFileName);
+        var stub_pixabayImageSearcher = this.stub(pixabayImageSearcher, 'search');
+        stub_pixabayImageSearcher.withArgs(query).returns(Promise.resolve(aResponseFromPixabay));
+        var stub_queryPersister = this.stub(queryPersister, 'persist');
+        stub_queryPersister.withArgs(query, aResponseFromPixabay).returns(aResponseFromPixabay);
     }
 });
