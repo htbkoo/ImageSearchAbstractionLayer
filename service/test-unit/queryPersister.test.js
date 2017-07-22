@@ -61,6 +61,7 @@ describe("queryPersister", function () {
                     "timestamp": mockCurrentTime
                 })
             }).then(function (data) {
+                test.expect(data).to.be.not.null;
                 test.expect(data["query"]).to.equal(aQuery);
             }).then(function () {
                 // truncate
