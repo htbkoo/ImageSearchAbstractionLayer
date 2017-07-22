@@ -2,7 +2,6 @@
  * Created by Hey on 21 Jun 2017
  */
 var test = require('chai');
-var rewire = require('rewire');
 
 var serverHostNameFormatter = require('../serverHostNameFormatter');
 
