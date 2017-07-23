@@ -16,7 +16,12 @@ var mongoDbConnectionManager = require('../mongoDbConnectionManager');
 describe("queryPersister", function () {
     "use strict";
     var COLLECTION_NAME_LATEST_QUERIES = 'queries';
+    var mockDbConnection = mockMongoClient.connect("someHost");
     var stub = {};
+
+    beforeEach(function(){
+        stubMongoDbConnection();
+    });
 
     afterEach(function () {
         moment.now = function () {
@@ -34,8 +39,6 @@ describe("queryPersister", function () {
                 return new Date(mockCurrentTime);
             };
             var aQuery = "query", aSearchResult = "results", mockCurrentTime = "2013-02-04T22:44:30.652Z";
-            var mockDbConnection = mockMongoClient.connect("someHost");
-            stubMongoDbConnection(mockDbConnection);
 
             //    when
             var promise = queryPersister.persist(aQuery, aSearchResult);
@@ -72,14 +75,10 @@ describe("queryPersister", function () {
         it("should get latest search query terms from db", function () {
             //    given
             var handlerForCleanUp = {};
-            var mockDbConnection = mockMongoClient.connect("someHost");
-
             var lastSearch = {
                 "query": "someQuery",
                 "timestamp": "someTime"
             };
-
-            stubMongoDbConnection(mockDbConnection);
 
             return mockDbConnection.then(function (db) {
                 handlerForCleanUp.db = db;
@@ -131,7 +130,7 @@ describe("queryPersister", function () {
 
     }
 
-    function stubMongoDbConnection(mockDbConnection) {
+    function stubMongoDbConnection() {
         stub.mongoDbConnectionManager_getOrReuseMongoDbConnection = sinon.stub(mongoDbConnectionManager, "getOrReuseMongoDbConnection");
         stub.mongoDbConnectionManager_getOrReuseMongoDbConnection.returns(mockDbConnection);
     }
