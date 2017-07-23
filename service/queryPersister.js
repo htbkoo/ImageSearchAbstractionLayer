@@ -25,7 +25,13 @@ module.exports = {
                 return result;
             })
     },
-    "latest": function(){
-
+    "latest": function () {
+        return mongoDbConnectionManager.getOrReuseMongoDbConnection()
+            .then(function (db) {
+                return db.collection(COLLECTION_NAME_LATEST_QUERIES);
+            })
+            .then(function (collection) {
+                return collection.find({}, {"_id": 0, "query": 1, "timestamp": 1}).toArray();
+            });
     }
 };
