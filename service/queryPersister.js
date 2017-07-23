@@ -7,7 +7,6 @@ var COLLECTION_NAME_LATEST_QUERIES = 'queries';
 var moment = require('moment');
 
 var mongoDbConnectionManager = require('./mongoDbConnectionManager');
-// var connectToMongoDb = mongoDbConnectionManager.getOrReuseMongoDbConnection;
 
 module.exports = {
     "persist": function (query, result) {
@@ -25,5 +24,8 @@ module.exports = {
                 console.log(insertResult);
                 return result;
             })
+    },
+    "latest": function(){
+
     }
 };

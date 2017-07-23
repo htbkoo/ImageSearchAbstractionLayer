@@ -52,6 +52,26 @@ describe("imageSearchService", function () {
         }));
     });
 
+    describe("latest", function () {
+        it("should be able to get latest search queries", sinon.test(function () {
+            //    given
+            var stub_queryPersister = this.stub(queryPersister, 'latest');
+            var mockLatestSearches = [{
+                "query": "someQuery",
+                "timestamp": "someTime"
+            }];
+            stub_queryPersister.withArgs().returns(Promise.resolve(mockLatestSearches));
+
+            //    when
+            var promise = imageSearchService.latest();
+
+            //    then
+            return promise.then(function (latestSearches) {
+                test.expect(latestSearches).to.deep.equal(mockLatestSearches);
+            });
+        }));
+    });
+
     function getPromiseThatAssertResultsAndThrowOnError(promise, anotherResponseFromPixabay) {
         return promise.then(function (actualResults) {
             test.expect(actualResults).to.deep.equal(anotherResponseFromPixabay);
