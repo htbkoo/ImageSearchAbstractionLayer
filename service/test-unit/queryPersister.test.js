@@ -19,7 +19,7 @@ describe("queryPersister", function () {
     var mockDbConnection = mockMongoClient.connect("someHost");
     var stub = {};
 
-    beforeEach(function(){
+    beforeEach(function () {
         stubMongoDbConnection();
     });
 
@@ -99,6 +99,39 @@ describe("queryPersister", function () {
                 return handlerForCleanUp.collection.find(lastSearch).toArray();
             }).then(function (data) {
                 assertReturnedLatestSearches(data).to.be.similar.to([lastSearch]);
+            }).then(function () {
+                // truncate
+                handlerForCleanUp.collection.toJSON().documents.length = 0;
+                handlerForCleanUp.db.close();
+            }).catch(function (err) {
+                throw err;
+            });
+        });
+
+        it("should limit the number of latest search query terms from db to 10", function () {
+            //    given
+            var handlerForCleanUp = {};
+            var lastSearches = require('./resources/someLatestSearches.json');
+            var expectedReturnValue = require('./resources/expectedReturnedLatestSearches.json');
+
+            return mockDbConnection.then(function (db) {
+                handlerForCleanUp.db = db;
+                handlerForCleanUp.collection = db.collection(COLLECTION_NAME_LATEST_QUERIES);
+                var documents = handlerForCleanUp.collection.toJSON().documents;
+                documents.length = 0;
+                lastSearches.forEach(function (search) {
+                    documents.push(search)
+                });
+
+                //    when
+                return queryPersister.latest();
+            }).then(function (latest) {
+                //    then
+                assertReturnedLatestSearches(latest).to.be.similar.to(expectedReturnValue);
+
+                return handlerForCleanUp.collection.find().toArray();
+            }).then(function (data) {
+                assertReturnedLatestSearches(data).to.be.similar.to(lastSearches);
             }).then(function () {
                 // truncate
                 handlerForCleanUp.collection.toJSON().documents.length = 0;

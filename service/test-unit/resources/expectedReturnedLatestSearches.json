@@ -1,0 +1,42 @@
+[
+  {
+    "query": "query0",
+    "timstamp": "2017-07-01T00:00:00.000Z"
+  },
+  {
+    "query": "query1",
+    "timstamp": "2017-07-01T01:00:00.000Z"
+  },
+  {
+    "query": "query2",
+    "timstamp": "2017-07-02T00:00:00.000Z"
+  },
+  {
+    "query": "query3",
+    "timstamp": "2017-07-03T00:00:00.000Z"
+  },
+  {
+    "query": "query4",
+    "timstamp": "2017-07-04T00:00:00.000Z"
+  },
+  {
+    "query": "query5",
+    "timstamp": "2017-07-05T00:00:00.000Z"
+  },
+  {
+    "query": "query6",
+    "timstamp": "2017-07-06T00:00:00.000Z"
+  },
+  {
+    "query": "query7",
+    "timstamp": "2017-07-07T00:00:00.000Z"
+  },
+  {
+    "query": "query8",
+    "timstamp": "2017-07-08T00:00:00.000Z"
+  },
+  {
+    "query": "query9",
+    "timstamp": "2017-07-09T00:00:00.000Z"
+  }
+]
