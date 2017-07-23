@@ -33,10 +33,7 @@ module.exports = {
             })
             .then(function (collection) {
                 return collection.find({}, {"_id": 0, "query": 1, "timestamp": 1})
-                    .sort({
-                        "timestamp": -1,
-                        "query": 0
-                    })
+                    .sort({"timestamp": -1})
                     .limit(LIMIT_NUM_LATEST_SEARCHES)
                     .toArray();
             });
