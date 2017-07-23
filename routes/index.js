@@ -19,7 +19,6 @@ router.get('/search/*', function (req, res, next) {
 });
 
 router.get('/latest', function (req, res, next) {
-    var urlParam = req.params['0'];
     var promise = imageSearchService.latest();
     handlePromise(promise, res, next);
 });
