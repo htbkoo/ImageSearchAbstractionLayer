@@ -15,7 +15,7 @@ router.get('/', function (req, res) {
     });
 });
 
-router.get('/search/*', function (req, res) {
+router.get('/search/*', function (req, res, next) {
     var query = req.params['0'];
     var offset = req.query.offset;
     imageSearchService.searchAndPersist(query, offset)
@@ -25,17 +25,21 @@ router.get('/search/*', function (req, res) {
         )
         .catch(function (err) {
             console.log(err);
-            throw err;
+            next(err);
         });
 });
 
-router.get('/latest', function (req, res) {
+router.get('/latest', function (req, res, next) {
     var urlParam = req.params['0'];
     imageSearchService.latest()
         .then(function (jsonResponse) {
                 res.send(jsonResponse);
             }
-        );
+        )
+        .catch(function (err) {
+            console.log(err);
+            next(err);
+        });
 });
 
 module.exports = router;
