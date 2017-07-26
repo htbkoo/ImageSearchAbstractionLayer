@@ -17,5 +17,17 @@ describe("existingIndexChecker", function () {
 
         //    Then
         test.expect(isContainsKey).to.be.true;
+    });
+
+    it("should return false if existing index does not contain the key of the index to add", function () {
+        //    Given
+        var withoutKey_Indexes = require("./resources/mongoDB_withoutIndexes_response.json");
+        var keyToAdd = {"key": {"timestamp": 1}};
+
+        //    When
+        var isContainsKey = existingIndexChecker(withoutKey_Indexes).containsKey(keyToAdd);
+
+        //    Then
+        test.expect(isContainsKey).to.be.false;
     })
 });
