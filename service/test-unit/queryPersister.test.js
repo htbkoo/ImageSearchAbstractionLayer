@@ -15,7 +15,7 @@ var mongoDbConnectionManager = require('../mongoDbConnectionManager');
 
 describe("queryPersister", function () {
     "use strict";
-    var COLLECTION_NAME_LATEST_QUERIES = 'queries';
+    var COLLECTION_NAME = {"LATEST_QUERIES": "queries", "SEARCH_CACHE": "caches"};
     var mockDbConnection = mockMongoClient.connect("someHost");
     var stub = {};
 
@@ -52,7 +52,7 @@ describe("queryPersister", function () {
             }).then(function (db) {
                 handlerForCleanUp.db = db;
 
-                var collection = db.collection(COLLECTION_NAME_LATEST_QUERIES);
+                var collection = db.collection(COLLECTION_NAME.LATEST_QUERIES);
                 handlerForCleanUp.collection = collection;
                 return collection.findOne({
                     "query": aQuery,
@@ -82,7 +82,7 @@ describe("queryPersister", function () {
 
             return mockDbConnection.then(function (db) {
                 handlerForCleanUp.db = db;
-                var collection = db.collection(COLLECTION_NAME_LATEST_QUERIES);
+                var collection = db.collection(COLLECTION_NAME.LATEST_QUERIES);
                 handlerForCleanUp.collection = collection;
                 handlerForCleanUp.collection.toJSON().documents.length = 0;
 
@@ -126,7 +126,7 @@ describe("queryPersister", function () {
 
                 return mockDbConnection.then(function (db) {
                     handlerForCleanUp.db = db;
-                    handlerForCleanUp.collection = db.collection(COLLECTION_NAME_LATEST_QUERIES);
+                    handlerForCleanUp.collection = db.collection(COLLECTION_NAME.LATEST_QUERIES);
                     var documents = handlerForCleanUp.collection.toJSON().documents;
                     documents.length = 0;
                     lastSearches.forEach(function (search) {
@@ -171,7 +171,6 @@ describe("queryPersister", function () {
                 }
             }
         };
-
     }
 
     function stubMongoDbConnection() {
