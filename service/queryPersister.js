@@ -2,7 +2,7 @@
  * Created by Hey on 20 Jul 2017
  */
 
-var COLLECTION_NAME = {"LATEST_QUERIES": "queries"};
+var COLLECTION_NAME = {"LATEST_QUERIES": "queries", "SEARCH_CACHE": "caches"};
 var LIMIT_NUM_LATEST_SEARCHES = 10;
 
 var moment = require('moment');
@@ -40,6 +40,12 @@ module.exports = {
                     .sort({"timestamp": -1})
                     .limit(LIMIT_NUM_LATEST_SEARCHES)
                     .toArray();
+            });
+    },
+    "tryLoadCache": function (query) {
+        return mongoDb().connectAndGetCollection(COLLECTION_NAME.SEARCH_CACHE)
+            .then(function (collection) {
+                return collection.findOne({"query": query}, {"_id": 0, "result": 1, "query": 0});
             });
     }
 };

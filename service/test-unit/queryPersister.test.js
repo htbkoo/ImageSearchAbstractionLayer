@@ -153,6 +153,40 @@ describe("queryPersister", function () {
         });
     });
 
+    describe("tryLoadCache", function () {
+        it("should, given existing cache, tryLoadCache('query') and return promise", function () {
+            //    given
+            var handlerForCleanUp = {};
+            var someQuery = "query", someResult = "result";
+            return mockDbConnection.then(function (db) {
+                handlerForCleanUp.db = db;
+                handlerForCleanUp.collection = db.collection(COLLECTION_NAME.SEARCH_CACHE);
+                var documents = handlerForCleanUp.collection.toJSON().documents;
+                if (typeof documents !== "undefined") {
+                    documents.length = 0;
+                }
+                return handlerForCleanUp.collection;
+            }).then(function (collection) {
+                return collection.insertOne({
+                    "query": someQuery,
+                    "result": someResult
+                });
+            }).then(function () {
+                //    when
+                return queryPersister.tryLoadCache(someQuery);
+            }).then(function (cache) {
+                //    then
+                test.expect(cache.result).to.equal(someResult);
+            }).then(function () {
+                // truncate
+                handlerForCleanUp.collection.toJSON().documents.length = 0;
+                handlerForCleanUp.db.close();
+            }).catch(function (err) {
+                throw err;
+            });
+        });
+    });
+
     function assertReturnedLatestSearches(latest) {
         test.expect(latest).to.be.an("Array");
         return {
