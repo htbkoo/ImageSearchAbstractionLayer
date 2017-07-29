@@ -1,6 +1,12 @@
 var express = require('express');
 var router = express.Router();
 
+require('../service/mongoDbInitializer')
+    .createIndexesIfMissing()
+    .catch(function (err) {
+        console.log("Error caught during mongoDbInitializer.createIndexesIfMissing() due to: " + err);
+    });
+
 var imageSearchService = require("../service/imageSearchService");
 var serverHostNameFormatter = require("../service/serverHostNameFormatter");
 

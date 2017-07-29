@@ -15,18 +15,9 @@ module.exports = {
         return mongoDbConnectionManager.getOrReuseMongoDbConnection().then(function (db) {
             return db.collection("queries");
         }).then(function (collection) {
-            collection_queries = collection;
-            return collection.getIndexes();
-        }).then(function (existingIndexes) {
-            var existing = existingIndexChecker(existingIndexes);
             return Promise.all(
                 EXPECTED_INDEXES.map(function (index) {
-                    if (!existing.containsKey(index)) {
-                        console.log(format("Creating index for {} with op: {}", JSON.stringify(index.key), JSON.stringify(index.op)));
-                        return collection_queries.createIndex(index.key, index.op);
-                    }
-                    console.log(format("Index already exists for {}, not creating.", JSON.stringify(index.key)));
-                    return Promise.resolve();
+                    return collection.ensureIndex(index.key, index.op);
                 })
             );
         });
