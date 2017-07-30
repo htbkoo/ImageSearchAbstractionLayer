@@ -120,35 +120,28 @@ describe("queryPersister", function () {
         ].forEach(function (testCase) {
             it(testCase.name, function () {
                 //    given
-                var handlerForCleanUp = {};
-                var lastSearches = require('./resources/' + testCase.latestSearchesJsonFileName);
-                var expectedReturnValue = require('./resources/expectedReturnedLatestSearches.json');
+                var lastSearches = require('./resources/' + testCase.latestSearchesJsonFileName), mongoCollection;
 
-                return mockDbConnection.then(function (db) {
-                    handlerForCleanUp.db = db;
-                    handlerForCleanUp.collection = db.collection(COLLECTION_NAME.LATEST_QUERIES);
-                    var documents = handlerForCleanUp.collection.toJSON().documents;
-                    documents.length = 0;
-                    lastSearches.forEach(function (search) {
-                        documents.push(search)
+                return performDbOperation(function (dbConnection) {
+                    return dbConnection.then(function (collection) {
+                        mongoCollection = collection;
+                        var documents = collection.toJSON().documents;
+                        lastSearches.forEach(function (search) {
+                            documents.push(search)
+                        });
+
+                        //    when
+                        return queryPersister.latest();
+                    }).then(function (latest) {
+                        //    then
+                        var expectedReturnValue = require('./resources/expectedReturnedLatestSearches.json');
+                        assertReturnedLatestSearches(latest).to.be.similar.to(expectedReturnValue);
+
+                        return mongoCollection.find().toArray();
+                    }).then(function (data) {
+                        assertReturnedLatestSearches(data).to.be.similar.to(lastSearches);
                     });
-
-                    //    when
-                    return queryPersister.latest();
-                }).then(function (latest) {
-                    //    then
-                    assertReturnedLatestSearches(latest).to.be.similar.to(expectedReturnValue);
-
-                    return handlerForCleanUp.collection.find().toArray();
-                }).then(function (data) {
-                    assertReturnedLatestSearches(data).to.be.similar.to(lastSearches);
-                }).then(function () {
-                    // truncate
-                    handlerForCleanUp.collection.toJSON().documents.length = 0;
-                    handlerForCleanUp.db.close();
-                }).catch(function (err) {
-                    throw err;
-                });
+                }).withCleanupAndErrorHandling.forCollection(COLLECTION_NAME.LATEST_QUERIES);
             });
         });
     });
@@ -210,5 +203,43 @@ describe("queryPersister", function () {
     function stubMongoDbConnection() {
         stub.mongoDbConnectionManager_getOrReuseMongoDbConnection = sinon.stub(mongoDbConnectionManager, "getOrReuseMongoDbConnection");
         stub.mongoDbConnectionManager_getOrReuseMongoDbConnection.returns(mockDbConnection);
+    }
+
+    function performDbOperation(dbOperation) {
+        var handlerForCleanUp = {};
+        var connectToDb = function () {
+            return mockDbConnection.then(function (db) {
+                handlerForCleanUp.db = db;
+                return db;
+            })
+        };
+        var closeDbAfterwardsAndCatchError = function (promise) {
+            return promise.then(function () {
+                handlerForCleanUp.db.close();
+            }).catch(function (err) {
+                throw err;
+            })
+        };
+        return {
+            "withCleanupAndErrorHandling": {
+                "forDb": function () {
+                    return closeDbAfterwardsAndCatchError(dbOperation(connectToDb()));
+                },
+                "forCollection": function (collectionName) {
+                    return closeDbAfterwardsAndCatchError(dbOperation(connectToDb().then(function (db) {
+                        handlerForCleanUp.collection = db.collection(collectionName);
+                        var documents = handlerForCleanUp.collection.toJSON().documents;
+                        if (typeof documents !== "undefined") {
+                            documents.length = 0;
+                        }
+
+                        return handlerForCleanUp.collection;
+                    })).then(function () {
+                        // truncate
+                        handlerForCleanUp.collection.toJSON().documents.length = 0;
+                    }));
+                }
+            }
+        };
     }
 });
