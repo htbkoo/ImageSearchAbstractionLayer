@@ -163,6 +163,24 @@ describe("queryPersister", function () {
                     });
                 });
         });
+
+        it("should, given non-existent cache, tryLoadCache('query') and return promise", function () {
+            //    given
+            var handlerForCleanUp = {};
+            var someQuery = "query", someResult = "result";
+            return initiateDbConnection()
+                .withCleanupAndErrorHandling()
+                .forCollection(COLLECTION_NAME.SEARCH_CACHE)
+                .performDbOperation(function (dbConnection) {
+                    return dbConnection.then(function () {
+                        //    when
+                        return queryPersister.tryLoadCache(someQuery);
+                    }).then(function (cache) {
+                        //    then
+                        test.expect(cache).to.be.null;
+                    });
+                });
+        });
     });
 
     function assertReturnedLatestSearches(latest) {
@@ -228,8 +246,11 @@ describe("queryPersister", function () {
                                 handlerForCleanUp.collection = db.collection(collectionName);
                                 return handlerForCleanUp.collection;
                             })).then(function () {
-                                // truncate
-                                handlerForCleanUp.collection.toJSON().documents.length = 0;
+                                // truncate if found
+                                var documents = handlerForCleanUp.collection.toJSON().documents;
+                                if (typeof documents !== "undefined") {
+                                    documents.length = 0;
+                                }
                             }));
                         });
                     }
