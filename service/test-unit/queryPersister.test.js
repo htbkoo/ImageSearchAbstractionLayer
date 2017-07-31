@@ -48,7 +48,8 @@ describe("queryPersister", function () {
             return promise.then(function (returnValue) {
                 test.expect(returnValue).to.be.equal(aSearchResult);
 
-                return withCleanupAndErrorHandling()
+                return initiateDbConnection()
+                    .withCleanupAndErrorHandling()
                     .forCollection(COLLECTION_NAME.LATEST_QUERIES)
                     .performDbOperation(function (dbConnection) {
                         return dbConnection.then(function (collection) {
@@ -75,7 +76,8 @@ describe("queryPersister", function () {
                 "timestamp": "someTime"
             };
 
-            return withCleanupAndErrorHandling()
+            return initiateDbConnection()
+                .withCleanupAndErrorHandling()
                 .forCollection(COLLECTION_NAME.LATEST_QUERIES)
                 .performDbOperation(function (dbConnection) {
                     return dbConnection.then(function (collection) {
@@ -111,7 +113,8 @@ describe("queryPersister", function () {
                 //    given
                 var lastSearches = require('./resources/' + testCase.latestSearchesJsonFileName), mongoCollection;
 
-                return withCleanupAndErrorHandling()
+                return initiateDbConnection()
+                    .withCleanupAndErrorHandling()
                     .forCollection(COLLECTION_NAME.LATEST_QUERIES)
                     .performDbOperation(function (dbConnection) {
                         return dbConnection.then(function (collection) {
@@ -142,7 +145,8 @@ describe("queryPersister", function () {
             //    given
             var handlerForCleanUp = {};
             var someQuery = "query", someResult = "result";
-            return withCleanupAndErrorHandling()
+            return initiateDbConnection()
+                .withCleanupAndErrorHandling()
                 .forCollection(COLLECTION_NAME.SEARCH_CACHE)
                 .performDbOperation(function (dbConnection) {
                     return dbConnection.then(function (collection) {
@@ -186,42 +190,48 @@ describe("queryPersister", function () {
         stub.mongoDbConnectionManager_getOrReuseMongoDbConnection.returns(mockDbConnection);
     }
 
-    function withCleanupAndErrorHandling() {
-        var handlerForCleanUp = {};
-
-        function connectToDb() {
-            return mockDbConnection.then(function (db) {
-                handlerForCleanUp.db = db;
-                return db;
-            })
-        }
-
-        function closeDbAfterwardsAndCatchError(promise) {
-            return promise.then(function () {
-                handlerForCleanUp.db.close();
-            }).catch(function (err) {
-                throw err;
-            })
-        }
-
+    function initiateDbConnection() {
         return {
-            "forDb": function () {
+            "withCleanupAndErrorHandling": function () {
+                var handlerForCleanUp = {};
+
+                function connectToDb() {
+                    return mockDbConnection.then(function (db) {
+                        handlerForCleanUp.db = db;
+                        return db;
+                    })
+                }
+
+                function closeDbAfterwardsAndCatchError(promise) {
+                    return promise.then(function () {
+                        handlerForCleanUp.db.close();
+                    }).catch(function (err) {
+                        throw err;
+                    })
+                }
+
+                function addPerformDbOperationWrapper(dbOperation) {
+                    return {
+                        "performDbOperation": dbOperation
+                    };
+                }
+
                 return {
-                    "performDbOperation": function (dbOperation) {
-                        return closeDbAfterwardsAndCatchError(dbOperation(connectToDb()));
-                    }
-                };
-            },
-            "forCollection": function (collectionName) {
-                return {
-                    "performDbOperation": function (dbOperation) {
-                        return closeDbAfterwardsAndCatchError(dbOperation(connectToDb().then(function (db) {
-                            handlerForCleanUp.collection = db.collection(collectionName);
-                            return handlerForCleanUp.collection;
-                        })).then(function () {
-                            // truncate
-                            handlerForCleanUp.collection.toJSON().documents.length = 0;
-                        }));
+                    "forDb": function () {
+                        return addPerformDbOperationWrapper(function (performDbOperationOn) {
+                            return closeDbAfterwardsAndCatchError(performDbOperationOn(connectToDb()));
+                        });
+                    },
+                    "forCollection": function (collectionName) {
+                        return addPerformDbOperationWrapper(function (performDbOperationOn) {
+                            return closeDbAfterwardsAndCatchError(performDbOperationOn(connectToDb().then(function (db) {
+                                handlerForCleanUp.collection = db.collection(collectionName);
+                                return handlerForCleanUp.collection;
+                            })).then(function () {
+                                // truncate
+                                handlerForCleanUp.collection.toJSON().documents.length = 0;
+                            }));
+                        });
                     }
                 };
             }
