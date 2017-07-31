@@ -74,38 +74,30 @@ describe("queryPersister", function () {
     describe("latest", function () {
         it("should get latest search query terms from db", function () {
             //    given
-            var handlerForCleanUp = {};
+            var lastSearchCollection;
             var lastSearch = {
                 "query": "someQuery",
                 "timestamp": "someTime"
             };
 
-            return mockDbConnection.then(function (db) {
-                handlerForCleanUp.db = db;
-                var collection = db.collection(COLLECTION_NAME.LATEST_QUERIES);
-                handlerForCleanUp.collection = collection;
-                handlerForCleanUp.collection.toJSON().documents.length = 0;
+            return performDbOperation(function (dbConnection) {
+                return dbConnection.then(function (collection) {
+                    lastSearchCollection = collection;
+                    return collection.insert(lastSearch);
+                }).then(function () {
+                    //    when
+                    return queryPersister.latest();
+                }).then(function (latest) {
+                    //    then
+                    // TODO: report bug for mongo-mock - projection to take away _id does not work
+                    // test.expect(latest).to.be.deep.equal([lastSearch]);
+                    assertReturnedLatestSearches(latest).to.be.similar.to([lastSearch]);
 
-                return collection.insert(lastSearch);
-            }).then(function () {
-                //    when
-                return queryPersister.latest();
-            }).then(function (latest) {
-                //    then
-                // TODO: report bug for mongo-mock - projection to take away _id does not work
-                // test.expect(latest).to.be.deep.equal([lastSearch]);
-                assertReturnedLatestSearches(latest).to.be.similar.to([lastSearch]);
-
-                return handlerForCleanUp.collection.find(lastSearch).toArray();
-            }).then(function (data) {
-                assertReturnedLatestSearches(data).to.be.similar.to([lastSearch]);
-            }).then(function () {
-                // truncate
-                handlerForCleanUp.collection.toJSON().documents.length = 0;
-                handlerForCleanUp.db.close();
-            }).catch(function (err) {
-                throw err;
-            });
+                    return lastSearchCollection.find(lastSearch).toArray();
+                }).then(function (data) {
+                    assertReturnedLatestSearches(data).to.be.similar.to([lastSearch]);
+                });
+            }).withCleanupAndErrorHandling.forCollection(COLLECTION_NAME.LATEST_QUERIES);
         });
 
         [
@@ -151,32 +143,20 @@ describe("queryPersister", function () {
             //    given
             var handlerForCleanUp = {};
             var someQuery = "query", someResult = "result";
-            return mockDbConnection.then(function (db) {
-                handlerForCleanUp.db = db;
-                handlerForCleanUp.collection = db.collection(COLLECTION_NAME.SEARCH_CACHE);
-                var documents = handlerForCleanUp.collection.toJSON().documents;
-                if (typeof documents !== "undefined") {
-                    documents.length = 0;
-                }
-                return handlerForCleanUp.collection;
-            }).then(function (collection) {
-                return collection.insertOne({
-                    "query": someQuery,
-                    "result": someResult
+            return performDbOperation(function (dbConnection) {
+                return dbConnection.then(function (collection) {
+                    return collection.insertOne({
+                        "query": someQuery,
+                        "result": someResult
+                    });
+                }).then(function () {
+                    //    when
+                    return queryPersister.tryLoadCache(someQuery);
+                }).then(function (cache) {
+                    //    then
+                    test.expect(cache.result).to.equal(someResult);
                 });
-            }).then(function () {
-                //    when
-                return queryPersister.tryLoadCache(someQuery);
-            }).then(function (cache) {
-                //    then
-                test.expect(cache.result).to.equal(someResult);
-            }).then(function () {
-                // truncate
-                handlerForCleanUp.collection.toJSON().documents.length = 0;
-                handlerForCleanUp.db.close();
-            }).catch(function (err) {
-                throw err;
-            });
+            }).withCleanupAndErrorHandling.forCollection(COLLECTION_NAME.SEARCH_CACHE);
         });
     });
 
@@ -232,7 +212,6 @@ describe("queryPersister", function () {
                         if (typeof documents !== "undefined") {
                             documents.length = 0;
                         }
-
                         return handlerForCleanUp.collection;
                     })).then(function () {
                         // truncate
