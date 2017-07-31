@@ -39,34 +39,27 @@ describe("queryPersister", function () {
                 return new Date(mockCurrentTime);
             };
             var aQuery = "query", aSearchResult = "results", mockCurrentTime = "2013-02-04T22:44:30.652Z";
+            var lastSearchCollection;
 
             //    when
             var promise = queryPersister.persist(aQuery, aSearchResult);
 
             //    then
-            var handlerForCleanUp = {};
             return promise.then(function (returnValue) {
                 test.expect(returnValue).to.be.equal(aSearchResult);
 
-                return mockDbConnection;
-            }).then(function (db) {
-                handlerForCleanUp.db = db;
-
-                var collection = db.collection(COLLECTION_NAME.LATEST_QUERIES);
-                handlerForCleanUp.collection = collection;
-                return collection.findOne({
-                    "query": aQuery,
-                    "timestamp": moment(mockCurrentTime).toDate()
-                })
-            }).then(function (data) {
-                test.expect(data).to.be.not.null;
-                test.expect(data["query"]).to.equal(aQuery);
-            }).then(function () {
-                // truncate
-                handlerForCleanUp.collection.toJSON().documents.length = 0;
-                handlerForCleanUp.db.close();
-            }).catch(function (err) {
-                throw err;
+                return performDbOperation(function (dbConnection) {
+                    return dbConnection.then(function (collection) {
+                        lastSearchCollection = collection;
+                        return collection.findOne({
+                            "query": aQuery,
+                            "timestamp": moment(mockCurrentTime).toDate()
+                        })
+                    }).then(function (data) {
+                        test.expect(data).to.be.not.null;
+                        test.expect(data["query"]).to.equal(aQuery);
+                    })
+                }).withCleanupAndErrorHandling.forCollection(COLLECTION_NAME.LATEST_QUERIES);
             });
         });
     });
@@ -211,10 +204,6 @@ describe("queryPersister", function () {
                 "forCollection": function (collectionName) {
                     return closeDbAfterwardsAndCatchError(dbOperation(connectToDb().then(function (db) {
                         handlerForCleanUp.collection = db.collection(collectionName);
-                        var documents = handlerForCleanUp.collection.toJSON().documents;
-                        if (typeof documents !== "undefined") {
-                            documents.length = 0;
-                        }
                         return handlerForCleanUp.collection;
                     })).then(function () {
                         // truncate
