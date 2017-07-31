@@ -48,18 +48,20 @@ describe("queryPersister", function () {
             return promise.then(function (returnValue) {
                 test.expect(returnValue).to.be.equal(aSearchResult);
 
-                return performDbOperation(function (dbConnection) {
-                    return dbConnection.then(function (collection) {
-                        lastSearchCollection = collection;
-                        return collection.findOne({
-                            "query": aQuery,
-                            "timestamp": moment(mockCurrentTime).toDate()
+                return withCleanupAndErrorHandling()
+                    .forCollection(COLLECTION_NAME.LATEST_QUERIES)
+                    .performDbOperation(function (dbConnection) {
+                        return dbConnection.then(function (collection) {
+                            lastSearchCollection = collection;
+                            return collection.findOne({
+                                "query": aQuery,
+                                "timestamp": moment(mockCurrentTime).toDate()
+                            })
+                        }).then(function (data) {
+                            test.expect(data).to.be.not.null;
+                            test.expect(data["query"]).to.equal(aQuery);
                         })
-                    }).then(function (data) {
-                        test.expect(data).to.be.not.null;
-                        test.expect(data["query"]).to.equal(aQuery);
-                    })
-                }).withCleanupAndErrorHandling.forCollection(COLLECTION_NAME.LATEST_QUERIES);
+                    });
             });
         });
     });
@@ -73,24 +75,26 @@ describe("queryPersister", function () {
                 "timestamp": "someTime"
             };
 
-            return performDbOperation(function (dbConnection) {
-                return dbConnection.then(function (collection) {
-                    lastSearchCollection = collection;
-                    return collection.insert(lastSearch);
-                }).then(function () {
-                    //    when
-                    return queryPersister.latest();
-                }).then(function (latest) {
-                    //    then
-                    // TODO: report bug for mongo-mock - projection to take away _id does not work
-                    // test.expect(latest).to.be.deep.equal([lastSearch]);
-                    assertReturnedLatestSearches(latest).to.be.similar.to([lastSearch]);
+            return withCleanupAndErrorHandling()
+                .forCollection(COLLECTION_NAME.LATEST_QUERIES)
+                .performDbOperation(function (dbConnection) {
+                    return dbConnection.then(function (collection) {
+                        lastSearchCollection = collection;
+                        return collection.insert(lastSearch);
+                    }).then(function () {
+                        //    when
+                        return queryPersister.latest();
+                    }).then(function (latest) {
+                        //    then
+                        // TODO: report bug for mongo-mock - projection to take away _id does not work
+                        // test.expect(latest).to.be.deep.equal([lastSearch]);
+                        assertReturnedLatestSearches(latest).to.be.similar.to([lastSearch]);
 
-                    return lastSearchCollection.find(lastSearch).toArray();
-                }).then(function (data) {
-                    assertReturnedLatestSearches(data).to.be.similar.to([lastSearch]);
+                        return lastSearchCollection.find(lastSearch).toArray();
+                    }).then(function (data) {
+                        assertReturnedLatestSearches(data).to.be.similar.to([lastSearch]);
+                    });
                 });
-            }).withCleanupAndErrorHandling.forCollection(COLLECTION_NAME.LATEST_QUERIES);
         });
 
         [
@@ -107,26 +111,28 @@ describe("queryPersister", function () {
                 //    given
                 var lastSearches = require('./resources/' + testCase.latestSearchesJsonFileName), mongoCollection;
 
-                return performDbOperation(function (dbConnection) {
-                    return dbConnection.then(function (collection) {
-                        mongoCollection = collection;
-                        var documents = collection.toJSON().documents;
-                        lastSearches.forEach(function (search) {
-                            documents.push(search)
+                return withCleanupAndErrorHandling()
+                    .forCollection(COLLECTION_NAME.LATEST_QUERIES)
+                    .performDbOperation(function (dbConnection) {
+                        return dbConnection.then(function (collection) {
+                            mongoCollection = collection;
+                            var documents = collection.toJSON().documents;
+                            lastSearches.forEach(function (search) {
+                                documents.push(search)
+                            });
+
+                            //    when
+                            return queryPersister.latest();
+                        }).then(function (latest) {
+                            //    then
+                            var expectedReturnValue = require('./resources/expectedReturnedLatestSearches.json');
+                            assertReturnedLatestSearches(latest).to.be.similar.to(expectedReturnValue);
+
+                            return mongoCollection.find().toArray();
+                        }).then(function (data) {
+                            assertReturnedLatestSearches(data).to.be.similar.to(lastSearches);
                         });
-
-                        //    when
-                        return queryPersister.latest();
-                    }).then(function (latest) {
-                        //    then
-                        var expectedReturnValue = require('./resources/expectedReturnedLatestSearches.json');
-                        assertReturnedLatestSearches(latest).to.be.similar.to(expectedReturnValue);
-
-                        return mongoCollection.find().toArray();
-                    }).then(function (data) {
-                        assertReturnedLatestSearches(data).to.be.similar.to(lastSearches);
                     });
-                }).withCleanupAndErrorHandling.forCollection(COLLECTION_NAME.LATEST_QUERIES);
             });
         });
     });
@@ -136,20 +142,22 @@ describe("queryPersister", function () {
             //    given
             var handlerForCleanUp = {};
             var someQuery = "query", someResult = "result";
-            return performDbOperation(function (dbConnection) {
-                return dbConnection.then(function (collection) {
-                    return collection.insertOne({
-                        "query": someQuery,
-                        "result": someResult
+            return withCleanupAndErrorHandling()
+                .forCollection(COLLECTION_NAME.SEARCH_CACHE)
+                .performDbOperation(function (dbConnection) {
+                    return dbConnection.then(function (collection) {
+                        return collection.insertOne({
+                            "query": someQuery,
+                            "result": someResult
+                        });
+                    }).then(function () {
+                        //    when
+                        return queryPersister.tryLoadCache(someQuery);
+                    }).then(function (cache) {
+                        //    then
+                        test.expect(cache.result).to.equal(someResult);
                     });
-                }).then(function () {
-                    //    when
-                    return queryPersister.tryLoadCache(someQuery);
-                }).then(function (cache) {
-                    //    then
-                    test.expect(cache.result).to.equal(someResult);
                 });
-            }).withCleanupAndErrorHandling.forCollection(COLLECTION_NAME.SEARCH_CACHE);
         });
     });
 
@@ -178,7 +186,7 @@ describe("queryPersister", function () {
         stub.mongoDbConnectionManager_getOrReuseMongoDbConnection.returns(mockDbConnection);
     }
 
-    function performDbOperation(dbOperation) {
+    function withCleanupAndErrorHandling() {
         var handlerForCleanUp = {};
 
         function connectToDb() {
@@ -197,19 +205,25 @@ describe("queryPersister", function () {
         }
 
         return {
-            "withCleanupAndErrorHandling": {
-                "forDb": function () {
-                    return closeDbAfterwardsAndCatchError(dbOperation(connectToDb()));
-                },
-                "forCollection": function (collectionName) {
-                    return closeDbAfterwardsAndCatchError(dbOperation(connectToDb().then(function (db) {
-                        handlerForCleanUp.collection = db.collection(collectionName);
-                        return handlerForCleanUp.collection;
-                    })).then(function () {
-                        // truncate
-                        handlerForCleanUp.collection.toJSON().documents.length = 0;
-                    }));
-                }
+            "forDb": function () {
+                return {
+                    "performDbOperation": function (dbOperation) {
+                        return closeDbAfterwardsAndCatchError(dbOperation(connectToDb()));
+                    }
+                };
+            },
+            "forCollection": function (collectionName) {
+                return {
+                    "performDbOperation": function (dbOperation) {
+                        return closeDbAfterwardsAndCatchError(dbOperation(connectToDb().then(function (db) {
+                            handlerForCleanUp.collection = db.collection(collectionName);
+                            return handlerForCleanUp.collection;
+                        })).then(function () {
+                            // truncate
+                            handlerForCleanUp.collection.toJSON().documents.length = 0;
+                        }));
+                    }
+                };
             }
         };
     }
