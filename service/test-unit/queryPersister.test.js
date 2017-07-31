@@ -187,19 +187,22 @@ describe("queryPersister", function () {
 
     function performDbOperation(dbOperation) {
         var handlerForCleanUp = {};
-        var connectToDb = function () {
+
+        function connectToDb() {
             return mockDbConnection.then(function (db) {
                 handlerForCleanUp.db = db;
                 return db;
             })
-        };
-        var closeDbAfterwardsAndCatchError = function (promise) {
+        }
+
+        function closeDbAfterwardsAndCatchError(promise) {
             return promise.then(function () {
                 handlerForCleanUp.db.close();
             }).catch(function (err) {
                 throw err;
             })
-        };
+        }
+
         return {
             "withCleanupAndErrorHandling": {
                 "forDb": function () {
