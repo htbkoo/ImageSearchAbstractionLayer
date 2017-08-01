@@ -152,7 +152,8 @@ describe("queryPersister", function () {
                     return dbConnection.then(function (collection) {
                         return collection.insertOne({
                             "query": someQuery,
-                            "result": someResult
+                            "result": someResult,
+                            "timestamp": new Date(2017, 7, 1)
                         });
                     }).then(function () {
                         //    when

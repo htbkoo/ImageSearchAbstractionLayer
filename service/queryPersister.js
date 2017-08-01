@@ -45,7 +45,7 @@ module.exports = {
     "tryLoadCache": function (query) {
         return mongoDb().connectAndGetCollection(COLLECTION_NAME.SEARCH_CACHE)
             .then(function (collection) {
-                return collection.findOne({"query": query}, {"_id": 0, "result": 1, "query": 0});
+                return collection.findOne({"query": query}, {"_id": 0, "result": 1, "query": 0, "timestamp": 0});
             });
     }
 };
