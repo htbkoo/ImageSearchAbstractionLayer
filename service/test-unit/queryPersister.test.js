@@ -5,6 +5,7 @@ var test = require('chai');
 var format = require('string-format');
 var moment = require('moment');
 var sinon = require('../test-util/sinonTestHelper').sinon;
+var testUtils = require('../test-util/testUtils');
 
 var mockMongo = require('mongo-mock');
 mockMongo.max_delay = 0;
@@ -78,6 +79,7 @@ describe("queryPersister", function () {
 
             return initiateDbConnection()
                 .withCleanupAndErrorHandling()
+                .purgeCollectionBeforeDbOperation()
                 .forCollection(COLLECTION_NAME.LATEST_QUERIES)
                 .performDbOperation(function (dbConnection) {
                     return dbConnection.then(function (collection) {
@@ -115,6 +117,7 @@ describe("queryPersister", function () {
 
                 return initiateDbConnection()
                     .withCleanupAndErrorHandling()
+                    .purgeCollectionBeforeDbOperation()
                     .forCollection(COLLECTION_NAME.LATEST_QUERIES)
                     .performDbOperation(function (dbConnection) {
                         return dbConnection.then(function (collection) {
@@ -147,6 +150,7 @@ describe("queryPersister", function () {
             var someQuery = "query", someResult = "result";
             return initiateDbConnection()
                 .withCleanupAndErrorHandling()
+                .purgeCollectionBeforeDbOperation()
                 .forCollection(COLLECTION_NAME.SEARCH_CACHE)
                 .performDbOperation(function (dbConnection) {
                     return dbConnection.then(function (collection) {
@@ -171,6 +175,7 @@ describe("queryPersister", function () {
             var someQuery = "query", someResult = "result";
             return initiateDbConnection()
                 .withCleanupAndErrorHandling()
+                .purgeCollectionBeforeDbOperation()
                 .forCollection(COLLECTION_NAME.SEARCH_CACHE)
                 .performDbOperation(function (dbConnection) {
                     return dbConnection.then(function () {
@@ -213,6 +218,7 @@ describe("queryPersister", function () {
         return {
             "withCleanupAndErrorHandling": function () {
                 var handlerForCleanUp = {};
+                var shouldPurgeBeforehand = false;
 
                 function connectToDb() {
                     return mockDbConnection.then(function (db) {
@@ -235,7 +241,18 @@ describe("queryPersister", function () {
                     };
                 }
 
-                return {
+                function cleanUpDatabaseIfCollectionIsDefined() {
+                    // truncate if found
+                    if (testUtils.isObjectDefined(handlerForCleanUp.collection)) {
+                        var collectionAsJson = handlerForCleanUp.collection.toJSON();
+                        if (testUtils.isObjectDefined(collectionAsJson.documents)) {
+                            collectionAsJson.documents.length = 0;
+                            // json.documents = [];
+                        }
+                    }
+                }
+
+                var termOperations = {
                     "forDb": function () {
                         return addPerformDbOperationWrapper(function (performDbOperationOn) {
                             return closeDbAfterwardsAndCatchError(performDbOperationOn(connectToDb()));
@@ -245,17 +262,23 @@ describe("queryPersister", function () {
                         return addPerformDbOperationWrapper(function (performDbOperationOn) {
                             return closeDbAfterwardsAndCatchError(performDbOperationOn(connectToDb().then(function (db) {
                                 handlerForCleanUp.collection = db.collection(collectionName);
-                                return handlerForCleanUp.collection;
-                            })).then(function () {
-                                // truncate if found
-                                var documents = handlerForCleanUp.collection.toJSON().documents;
-                                if (typeof documents !== "undefined") {
-                                    documents.length = 0;
+
+                                if (shouldPurgeBeforehand) {
+                                    cleanUpDatabaseIfCollectionIsDefined();
                                 }
-                            }));
+
+                                return handlerForCleanUp.collection;
+                            })).then(cleanUpDatabaseIfCollectionIsDefined));
                         });
                     }
                 };
+                var withFlag = Object.assign({}, termOperations);
+                withFlag.purgeCollectionBeforeDbOperation = function () {
+                    shouldPurgeBeforehand = true;
+                    return termOperations;
+                };
+
+                return withFlag;
             }
         };
     }
