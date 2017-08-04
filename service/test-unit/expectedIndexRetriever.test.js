@@ -16,10 +16,10 @@ describe("expectedIndexRetriever", function () {
         var expectedIndex = expectedIndexRetriever.retrieve();
 
         //    Then
-        test.expect(expectedIndex).to.be.an('Array');
-        expectedIndex.forEach(function (index) {
-            test.expect(index.key).to.be.an('Object');
-            test.expect(index.op).to.be.an('Object');
+        test.expect(expectedIndex).to.be.an('Object');
+        Object.keys(expectedIndex).forEach(function (collectionName) {
+            test.expect(expectedIndex[collectionName].key).to.be.an('Object');
+            test.expect(expectedIndex[collectionName].op).to.be.an('Object');
         });
     });
 });
