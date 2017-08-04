@@ -22,26 +22,16 @@ function mongoDb() {
 
 module.exports = {
     "persist": function (query, result) {
-        var timestamp = moment().toDate();
         return mongoDb().connectAndGetCollection(COLLECTION_NAME.LATEST_QUERIES)
-            .then(function (lastQueriesCollection) {
-                return lastQueriesCollection.insertOne({
+            .then(function (collection) {
+                return collection.insertOne({
                     "query": query,
-                    "timestamp": timestamp
+                    "timestamp": moment().toDate()
                 });
             }).then(function (insertResult) {
                 console.log(insertResult);
-                return mongoDb().connectAndGetCollection(COLLECTION_NAME.SEARCH_CACHE);
-            }).then(function(searchCacheCollection){
-                return searchCacheCollection.insertOne({
-                    "query": query,
-                    "result": result,
-                    "timestamp": timestamp
-                });
-            }).then(function(insertResult){
-                console.log(insertResult);
                 return result;
-            });
+            })
     },
     "latest": function () {
         return mongoDb().connectAndGetCollection(COLLECTION_NAME.LATEST_QUERIES)

@@ -2,7 +2,6 @@
  * Created by Hey on 20 Jul 2017
  */
 var test = require('chai');
-test.use(require('chai-moment'));
 var format = require('string-format');
 var moment = require('moment');
 var sinon = require('../test-util/sinonTestHelper').sinon;
@@ -64,44 +63,7 @@ describe("queryPersister", function () {
                             test.expect(data).to.be.not.null;
                             test.expect(data["query"]).to.equal(aQuery);
                         })
-                    }).then(cleanUpCollection(COLLECTION_NAME.SEARCH_CACHE));
-            });
-        });
-
-        it("should be able to persist cache of results with creation timestamp", function () {
-            //    given
-            moment.now = function () {
-                return mockCurrentTimeInDate;
-            };
-            var aQuery = "query", aSearchResult = "results",
-                mockCurrentTimeInDate = moment("2013-02-04T22:44:30.652Z").toDate();
-            var searchCacheCollection;
-
-            //    when
-            var promise = queryPersister.persist(aQuery, aSearchResult);
-
-            //    then
-            return promise.then(function (returnValue) {
-                test.expect(returnValue).to.be.equal(aSearchResult);
-
-                return initiateDbConnection()
-                    .withCleanupAndErrorHandling()
-                    .forCollection(COLLECTION_NAME.SEARCH_CACHE)
-                    .performDbOperation(function (dbConnection) {
-                        return dbConnection.then(function (collection) {
-                            searchCacheCollection = collection;
-                            return collection.findOne({
-                                "query": aQuery,
-                                "result": aSearchResult,
-                                "timestamp": mockCurrentTimeInDate
-                            })
-                        }).then(function (data) {
-                            test.expect(data).to.be.not.null;
-                            test.expect(data["query"]).to.equal(aQuery);
-                            test.expect(data["result"]).to.equal(aSearchResult);
-                            test.expect(moment(data["timestamp"])).to.be.sameMoment(moment(mockCurrentTimeInDate));
-                        })
-                    }).then(cleanUpCollection(COLLECTION_NAME.LATEST_QUERIES));
+                    });
             });
         });
     });
@@ -319,18 +281,5 @@ describe("queryPersister", function () {
                 return withFlag;
             }
         };
-    }
-
-    function cleanUpCollection(collectionName) {
-        return function () {
-            return initiateDbConnection()
-                .withCleanupAndErrorHandling()
-                .forCollection(collectionName)
-                .performDbOperation(noOpDbOperation);
-        };
-    }
-
-    function noOpDbOperation(collection) {
-        return Promise.resolve(collection);
     }
 });
