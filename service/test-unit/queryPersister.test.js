@@ -43,7 +43,7 @@ describe("queryPersister", function () {
             var lastSearchCollection;
 
             //    when
-            var promise = queryPersister.persist(aQuery, aSearchResult);
+            var promise = queryPersister.persist.query(aQuery, aSearchResult);
 
             //    then
             return promise.then(function (returnValue) {

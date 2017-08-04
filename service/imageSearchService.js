@@ -9,7 +9,7 @@ module.exports = {
     "searchAndPersist": function (query, offset) {
         return pixabayImageSearcher.search(query, offset)
             .then(function (result) {
-                return queryPersister.persist(query, result);
+                return queryPersister.persist.query(query, result);
             })
             .then(function (result) {
                 return result.hits.map(function (hit) {

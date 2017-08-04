@@ -21,17 +21,19 @@ function mongoDb() {
 }
 
 module.exports = {
-    "persist": function (query, result) {
-        return mongoDb().connectAndGetCollection(COLLECTION_NAME.LATEST_QUERIES)
-            .then(function (collection) {
-                return collection.insertOne({
-                    "query": query,
-                    "timestamp": moment().toDate()
-                });
-            }).then(function (insertResult) {
-                console.log(insertResult);
-                return result;
-            })
+    "persist": {
+        "query": function (query, result) {
+            return mongoDb().connectAndGetCollection(COLLECTION_NAME.LATEST_QUERIES)
+                .then(function (collection) {
+                    return collection.insertOne({
+                        "query": query,
+                        "timestamp": moment().toDate()
+                    });
+                }).then(function (insertResult) {
+                    console.log(insertResult);
+                    return result;
+                })
+        }
     },
     "latest": function () {
         return mongoDb().connectAndGetCollection(COLLECTION_NAME.LATEST_QUERIES)

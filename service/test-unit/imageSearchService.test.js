@@ -84,7 +84,7 @@ describe("imageSearchService", function () {
         var aResponseFromPixabay = require('./resources/' + responseJsonFileName);
         var stub_pixabayImageSearcher = this.stub(pixabayImageSearcher, 'search');
         stub_pixabayImageSearcher.withArgs(query).returns(Promise.resolve(aResponseFromPixabay));
-        var stub_queryPersister = this.stub(queryPersister, 'persist');
+        var stub_queryPersister = this.stub(queryPersister.persist, 'query');
         stub_queryPersister.withArgs(query, aResponseFromPixabay).returns(aResponseFromPixabay);
     }
 });
