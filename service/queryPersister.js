@@ -33,6 +33,20 @@ module.exports = {
                     console.log(insertResult);
                     return result;
                 })
+        },
+        "cache": function(query, offset, result){
+            return mongoDb().connectAndGetCollection(COLLECTION_NAME.SEARCH_CACHE)
+                .then(function(collection){
+                    return collection.insertOne({
+                        "query": query,
+                        "offset": offset,
+                        "result": result,
+                        "timestamp": moment().toDate()
+                    });
+                }).then(function (insertResult) {
+                    console.log(insertResult);
+                    return result;
+                })
         }
     },
     "latest": function () {

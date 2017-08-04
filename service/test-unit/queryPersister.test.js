@@ -2,6 +2,7 @@
  * Created by Hey on 20 Jul 2017
  */
 var test = require('chai');
+test.use(require('chai-moment'));
 var format = require('string-format');
 var moment = require('moment');
 var sinon = require('../test-util/sinonTestHelper').sinon;
@@ -34,36 +35,85 @@ describe("queryPersister", function () {
     });
 
     describe("persist", function () {
-        it("should be able to persist query with creation timestamp", function () {
-            //    given
-            moment.now = function () {
-                return new Date(mockCurrentTime);
-            };
-            var aQuery = "query", aSearchResult = "results", mockCurrentTime = "2013-02-04T22:44:30.652Z";
-            var lastSearchCollection;
+        describe("query", function () {
+            it("should be able to persist query with creation timestamp", function () {
+                //    given
+                moment.now = function () {
+                    return new Date(mockCurrentTime);
+                };
+                var aQuery = "query", aSearchResult = "results", mockCurrentTime = "2013-02-04T22:44:30.652Z";
+                var lastSearchCollection;
 
-            //    when
-            var promise = queryPersister.persist.query(aQuery, aSearchResult);
+                //    when
+                var promise = queryPersister.persist.query(aQuery, aSearchResult);
 
-            //    then
-            return promise.then(function (returnValue) {
-                test.expect(returnValue).to.be.equal(aSearchResult);
+                //    then
+                return promise.then(function (returnValue) {
+                    test.expect(returnValue).to.be.equal(aSearchResult);
 
-                return initiateDbConnection()
-                    .withCleanupAndErrorHandling()
-                    .forCollection(COLLECTION_NAME.LATEST_QUERIES)
-                    .performDbOperation(function (dbConnection) {
-                        return dbConnection.then(function (collection) {
-                            lastSearchCollection = collection;
-                            return collection.findOne({
-                                "query": aQuery,
-                                "timestamp": moment(mockCurrentTime).toDate()
+                    return initiateDbConnection()
+                        .withCleanupAndErrorHandling()
+                        .forCollection(COLLECTION_NAME.LATEST_QUERIES)
+                        .performDbOperation(function (dbConnection) {
+                            return dbConnection.then(function (collection) {
+                                lastSearchCollection = collection;
+                                return collection.findOne({
+                                    "query": aQuery,
+                                    "timestamp": moment(mockCurrentTime).toDate()
+                                })
+                            }).then(function (data) {
+                                test.expect(data).to.be.not.null;
+                                test.expect(data["query"]).to.equal(aQuery);
                             })
-                        }).then(function (data) {
-                            test.expect(data).to.be.not.null;
-                            test.expect(data["query"]).to.equal(aQuery);
+                        });
+                });
+            });
+        });
+
+        describe("cache", function () {
+            it("should be able to persist query with creation timestamp", function () {
+                //    given
+                moment.now = function () {
+                    return mockCurrentTimeInDate;
+                };
+                var aQuery = "query", aSearchResult = "results", anOffset = 2,
+                    mockCurrentTimeInDate = moment("2013-02-04T22:44:30.652Z").toDate();
+                var expectedPersistedObject = {
+                    "query": aQuery,
+                    "result": aSearchResult,
+                    "offset": anOffset,
+                    "timestamp": mockCurrentTimeInDate
+                };
+                var searchCacheCollection;
+
+                //    when
+                var promise = queryPersister.persist.cache(aQuery, anOffset, aSearchResult);
+
+                //    then
+                return promise.then(function (returnValue) {
+                    test.expect(returnValue).to.be.equal(aSearchResult);
+
+                    return initiateDbConnection()
+                        .withCleanupAndErrorHandling()
+                        .forCollection(COLLECTION_NAME.SEARCH_CACHE)
+                        .performDbOperation(function (dbConnection) {
+                            return dbConnection.then(function (collection) {
+                                searchCacheCollection = collection;
+                                return collection.findOne(expectedPersistedObject)
+                            }).then(function (data) {
+                                test.expect(data).to.be.not.null;
+                                Object.keys(expectedPersistedObject).forEach(function (key) {
+                                    var value = data[key];
+                                    var expectedValue = expectedPersistedObject[key];
+                                    if (value instanceof Date) {
+                                        test.expect(moment(value)).to.be.sameMoment(moment(expectedValue));
+                                    } else {
+                                        test.expect(value).to.equal(expectedValue);
+                                    }
+                                });
+                            })
                         })
-                    });
+                });
             });
         });
     });
