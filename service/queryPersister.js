@@ -34,9 +34,9 @@ module.exports = {
                     return result;
                 })
         },
-        "cache": function(query, offset, result){
+        "cache": function (query, offset, result) {
             return mongoDb().connectAndGetCollection(COLLECTION_NAME.SEARCH_CACHE)
-                .then(function(collection){
+                .then(function (collection) {
                     return collection.insertOne({
                         "query": query,
                         "offset": offset,
@@ -61,7 +61,7 @@ module.exports = {
     "tryLoadCache": function (query) {
         return mongoDb().connectAndGetCollection(COLLECTION_NAME.SEARCH_CACHE)
             .then(function (collection) {
-                return collection.findOne({"query": query}, {"_id": 0, "result": 1, "query": 0, "timestamp": 0});
+                return collection.findOne({"query": query}, {"_id": 0, "result": 1});
             });
     }
 };
