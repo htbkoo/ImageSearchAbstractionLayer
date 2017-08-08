@@ -18,7 +18,7 @@ describe("imageSearchService", function () {
                 query: someQuery,
                 responseJsonFileName: 'aResponseFromPixabay.json',
                 offset: 1
-            }).andQueryPersist();
+            }).andQueryPersist().andCachePersist();
 
             //    when
             var promise = imageSearchService.searchAndPersist(someQuery);
@@ -35,7 +35,7 @@ describe("imageSearchService", function () {
                 query: someQuery,
                 responseJsonFileName: 'anotherResponseFromPixabay.json',
                 offset: someOffset
-            }).andQueryPersist();
+            }).andQueryPersist().andCachePersist();
 
             //    when
             var promise = imageSearchService.searchAndPersist(someQuery, someOffset);
@@ -46,22 +46,23 @@ describe("imageSearchService", function () {
     });
 
     describe("persist", function () {
-        it("should persist search query in searchAndPersist(:query)", sinon.test(function () {
+        it("should persist search query and cache in searchAndPersist(:query)", sinon.test(function () {
             //    given
-            var someQuery = "someQuery";
+            var someQuery = "someQuery", someOffset = 10;
             var expectedResult = require('./resources/expectedResultFor_aResponseFromPixabay.json');
             var mockSearchResponseFileName = 'aResponseFromPixabay.json';
             stubResponse.call(this, {
                 query: someQuery,
                 responseJsonFileName: mockSearchResponseFileName,
-                offset: 1
+                offset: someOffset
             });
             var mock_queryPersister_persist = this.mock(queryPersister.persist);
             var mockSearchResponse = require('./resources/' + mockSearchResponseFileName);
             mock_queryPersister_persist.expects("query").withArgs(someQuery, mockSearchResponse).returns(mockSearchResponse).once();
+            mock_queryPersister_persist.expects("cache").withArgs(someQuery, someOffset, mockSearchResponse).returns(mockSearchResponse).once();
 
             //    when
-            var promise = imageSearchService.searchAndPersist(someQuery);
+            var promise = imageSearchService.searchAndPersist(someQuery, someOffset);
 
             //    then
             return getPromiseThatAssertResultsAndThrowOnError(promise, expectedResult).then(function () {
@@ -107,6 +108,12 @@ describe("imageSearchService", function () {
             "andQueryPersist": function () {
                 var stub_queryPersister = outerThis.stub(queryPersister.persist, 'query');
                 stub_queryPersister.withArgs(param.query, aResponseFromPixabay).returns(aResponseFromPixabay);
+                return {
+                    "andCachePersist": function () {
+                        var stub_queryPersister = outerThis.stub(queryPersister.persist, 'cache');
+                        stub_queryPersister.withArgs(param.query, param.offset, aResponseFromPixabay).returns(aResponseFromPixabay);
+                    }
+                }
             }
         };
     }

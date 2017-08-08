@@ -12,6 +12,9 @@ module.exports = {
             .then(function (result) {
                 return queryPersister.persist.query(query, result);
             })
+            .then(function(result){
+                return queryPersister.persist.cache(query, offset, result);
+            })
             .then(function (result) {
                 return result.hits.map(function (hit) {
                     return KEPT_FIELDS_FOR_PIXABAY_RESULTS.reduce(function (prev, field) {
