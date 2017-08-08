@@ -7,7 +7,7 @@ var PIXABAY_HOST_URL = 'https://pixabay.com/api/';
 
 module.exports = {
     "search": function (query, offset) {
-        offset = offset || 1;
+        offset = (typeof offset !== "undefined") ? offset :1;
         var options = {
             uri: PIXABAY_HOST_URL,
             qs: {
