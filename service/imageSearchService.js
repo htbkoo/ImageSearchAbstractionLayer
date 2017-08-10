@@ -11,6 +11,7 @@ module.exports = {
         var promise = queryPersister.tryLoadCache(query, offset)
             .then(function (result) {
                 if (isCacheFound(result)) {
+                    console.log("cache found - would retrieve from cache instead of fetching externally");
                     return Promise.resolve(result);
                 } else {
                     return pixabayImageSearcher.search(query, offset)

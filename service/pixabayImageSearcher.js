@@ -7,7 +7,7 @@ var PIXABAY_HOST_URL = 'https://pixabay.com/api/';
 
 module.exports = {
     "search": function (query, offset) {
-        offset = (typeof offset !== "undefined") ? offset :1;
+        offset = (typeof offset !== "undefined") ? offset : 1;
         var options = {
             uri: PIXABAY_HOST_URL,
             qs: {
@@ -18,6 +18,7 @@ module.exports = {
             json: true // Automatically parses the JSON string in the response
         };
 
+        console.log("fetching from " + PIXABAY_HOST_URL + " for q=" + query + " & page=" + offset);
         return rp.get(options);
     }
 };
