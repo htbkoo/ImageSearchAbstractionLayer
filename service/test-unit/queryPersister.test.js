@@ -194,24 +194,35 @@ describe("queryPersister", function () {
     });
 
     describe("tryLoadCache", function () {
-        it("should, given existing cache, tryLoadCache('query') and return promise", function () {
+        it("should, given existing cache, tryLoadCache('query', offset) and return promise", function () {
             //    given
             var handlerForCleanUp = {};
-            var someQuery = "query", someResult = "result";
+            var someQuery = "query", someOffset = 5, someResult = "result";
             return initiateDbConnection()
                 .withCleanupAndErrorHandling()
                 .purgeCollectionBeforeDbOperation()
                 .forCollection(COLLECTION_NAME.SEARCH_CACHE)
                 .performDbOperation(function (dbConnection) {
                     return dbConnection.then(function (collection) {
-                        return collection.insertOne({
+                        return collection.insertMany([{
                             "query": someQuery,
+                            "offset": 1,
+                            "result": "wrongResult",
+                            "timestamp": new Date(2017, 7, 1)
+                        }, {
+                            "query": someQuery,
+                            "offset": someOffset,
                             "result": someResult,
                             "timestamp": new Date(2017, 7, 1)
-                        });
+                        }, {
+                            "query": someQuery,
+                            "offset": 2,
+                            "result": "anotherWrongResult",
+                            "timestamp": new Date(2017, 7, 1)
+                        }]);
                     }).then(function () {
                         //    when
-                        return queryPersister.tryLoadCache(someQuery);
+                        return queryPersister.tryLoadCache(someQuery, someOffset);
                     }).then(function (cache) {
                         //    then
                         test.expect(cache.result).to.equal(someResult);
@@ -219,10 +230,10 @@ describe("queryPersister", function () {
                 });
         });
 
-        it("should, given non-existent cache, tryLoadCache('query') and return promise", function () {
+        it("should, given non-existent cache, tryLoadCache('query', offset) and return promise", function () {
             //    given
             var handlerForCleanUp = {};
-            var someQuery = "query", someResult = "result";
+            var someQuery = "query", someOffset = 6, someResult = "result";
             return initiateDbConnection()
                 .withCleanupAndErrorHandling()
                 .purgeCollectionBeforeDbOperation()
@@ -230,7 +241,7 @@ describe("queryPersister", function () {
                 .performDbOperation(function (dbConnection) {
                     return dbConnection.then(function () {
                         //    when
-                        return queryPersister.tryLoadCache(someQuery);
+                        return queryPersister.tryLoadCache(someQuery, someOffset);
                     }).then(function (cache) {
                         //    then
                         test.expect(cache).to.be.null;

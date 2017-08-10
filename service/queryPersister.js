@@ -58,10 +58,10 @@ module.exports = {
                     .toArray();
             });
     },
-    "tryLoadCache": function (query) {
+    "tryLoadCache": function (query, offset) {
         return mongoDb().connectAndGetCollection(COLLECTION_NAME.SEARCH_CACHE)
             .then(function (collection) {
-                return collection.findOne({"query": query}, {"_id": 0, "result": 1});
+                return collection.findOne({"query": query, "offset": offset}, {"_id": 0, "result": 1});
             });
     }
 };
