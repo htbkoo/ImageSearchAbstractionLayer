@@ -225,7 +225,7 @@ describe("queryPersister", function () {
                         return queryPersister.tryLoadCache(someQuery, someOffset);
                     }).then(function (cache) {
                         //    then
-                        test.expect(cache.result).to.equal(someResult);
+                        test.expect(cache).to.equal(someResult);
                     });
                 });
         });

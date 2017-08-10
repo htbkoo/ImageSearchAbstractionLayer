@@ -62,6 +62,9 @@ module.exports = {
         return mongoDb().connectAndGetCollection(COLLECTION_NAME.SEARCH_CACHE)
             .then(function (collection) {
                 return collection.findOne({"query": query, "offset": offset}, {"_id": 0, "result": 1});
+            })
+            .then(function (document) {
+                return (document !== null) ? document.result : document;
             });
     }
 };
