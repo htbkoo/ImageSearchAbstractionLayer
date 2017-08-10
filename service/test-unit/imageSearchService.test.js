@@ -20,6 +20,8 @@ describe("imageSearchService", function () {
                 offset: 1
             }).andQueryPersist().andCachePersist();
 
+            stubTryLoadCache.call(this, null).forAnyAngs();
+
             //    when
             var promise = imageSearchService.searchAndPersist(someQuery);
 
@@ -36,6 +38,8 @@ describe("imageSearchService", function () {
                 responseJsonFileName: 'anotherResponseFromPixabay.json',
                 offset: someOffset
             }).andQueryPersist().andCachePersist();
+
+            stubTryLoadCache.call(this, null).forAnyAngs();
 
             //    when
             var promise = imageSearchService.searchAndPersist(someQuery, someOffset);
@@ -56,10 +60,12 @@ describe("imageSearchService", function () {
                 responseJsonFileName: mockSearchResponseFileName,
                 offset: someOffset
             });
-            var mock_queryPersister_persist = this.mock(queryPersister.persist);
             var mockSearchResponse = require('./resources/' + mockSearchResponseFileName);
-            mock_queryPersister_persist.expects("query").withArgs(someQuery, mockSearchResponse).returns(mockSearchResponse).once();
-            mock_queryPersister_persist.expects("cache").withArgs(someQuery, someOffset, mockSearchResponse).returns(mockSearchResponse).once();
+            var mock_queryPersister_persist = this.mock(queryPersister.persist);
+            mock_queryPersister_persist.expects("query").once().withArgs(someQuery, mockSearchResponse).returns(mockSearchResponse);
+            mock_queryPersister_persist.expects("cache").once().withArgs(someQuery, someOffset, mockSearchResponse).returns(mockSearchResponse);
+
+            stubTryLoadCache.call(this, null).forAnyAngs();
 
             //    when
             var promise = imageSearchService.searchAndPersist(someQuery, someOffset);
@@ -68,6 +74,29 @@ describe("imageSearchService", function () {
             return getPromiseThatAssertResultsAndThrowOnError(promise, expectedResult).then(function () {
                 mock_queryPersister_persist.verify();
             });
+        }));
+    });
+
+    describe("load from cache", function () {
+        it("should load from cache if cache is found", sinon.test(function () {
+            //    given
+            var someQuery = "someQuery", someOffset = 5;
+            var expectedResult = require('./resources/expectedResultFor_anotherResponseFromPixabay.json');
+            var mockSearchResponse = require('./resources/anotherResponseFromPixabay.json');
+
+            stubTryLoadCache.call(this, mockSearchResponse).withArgs(someQuery, someOffset);
+            var stub_pixabayImageSearcher = this.stub(pixabayImageSearcher, 'search');
+            stub_pixabayImageSearcher.returns(Promise.reject(new Error("should not fetch externally when cache is found")));
+
+            var mock_queryPersister_persist = this.mock(queryPersister.persist);
+            mock_queryPersister_persist.expects("query").once().withArgs(someQuery, mockSearchResponse).returns(mockSearchResponse);
+            mock_queryPersister_persist.expects("cache").never();
+
+            //    when
+            var promise = imageSearchService.searchAndPersist(someQuery, someOffset);
+
+            //    then
+            return getPromiseThatAssertResultsAndThrowOnError(promise, expectedResult);
         }));
     });
 
@@ -116,5 +145,20 @@ describe("imageSearchService", function () {
                 }
             }
         };
+    }
+
+    function stubTryLoadCache(mockCache) {
+        var outterThis = this;
+        var stub = this.stub(queryPersister, "tryLoadCache");
+        return {
+            "withArgs": function (someQuery, someOffset) {
+                stub.withArgs(someQuery, someOffset).returns(Promise.resolve(mockCache));
+                return stub;
+            },
+            "forAnyAngs": function () {
+                stub.returns(Promise.resolve(mockCache));
+                return stub;
+            }
+        }
     }
 });

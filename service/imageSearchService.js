@@ -8,11 +8,18 @@ var KEPT_FIELDS_FOR_PIXABAY_RESULTS = ["tags", "previewURL", "pageURL"];
 module.exports = {
     "searchAndPersist": function (query, offset) {
         offset = (typeof offset !== "undefined") ? offset : 1;
-        var promise;
-        promise = pixabayImageSearcher.search(query, offset)
+        var promise = queryPersister.tryLoadCache(query, offset)
             .then(function (result) {
-                return queryPersister.persist.cache(query, offset, result);
+                if (isCacheFound(result)) {
+                    return Promise.resolve(result);
+                } else {
+                    return pixabayImageSearcher.search(query, offset)
+                        .then(function (result) {
+                            return queryPersister.persist.cache(query, offset, result);
+                        });
+                }
             });
+
         return promise
             .then(function (result) {
                 return queryPersister.persist.query(query, result);
@@ -30,3 +37,7 @@ module.exports = {
         return queryPersister.latest();
     }
 };
+
+function isCacheFound(result) {
+    return typeof result !== "undefined" && result !== null;
+}
